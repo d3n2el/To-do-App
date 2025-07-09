@@ -1,13 +1,16 @@
 let tasks = [];
 let editingTaskId = null;
+let currentFilter = 'all'; 
 
 // to save things locally use json
 function saveTasks() {
     try {
         localStorage.setItem('todoTasks', JSON.stringify(tasks));
+        // save filter to local storage too
+        localStorage.setItem('todoFilter', currentFilter);
     } catch (error) {
         console.error('Error saving tasks to localStorage:', error);
-        alert('Failed to save tasks. Your browser might have storage limits.');
+        showMessageBox('Failed to save tasks. Your browser might have storage limits.', 'error');
     }
 }
 
@@ -17,9 +20,14 @@ function loadTasks() {
         if (savedTasks) {
             tasks = JSON.parse(savedTasks);
         }
+        // use saved filter default to 'all' if not found
+        const savedFilter = localStorage.getItem('todoFilter');
+        if (savedFilter) {
+            currentFilter = savedFilter;
+        }
     } catch (error) {
         console.error('Error loading tasks from localStorage:', error);
-        alert('Failed to load saved tasks. Starting with empty list.');
+        showMessageBox('Failed to load saved tasks. Starting with empty list.', 'error');
         tasks = [];
     }
 }
@@ -41,7 +49,7 @@ function addTask() {
     const taskText = taskInput.value.trim();
     
     if (taskText === '') {
-        alert('Please enter a task!');
+        showMessageBox('Please enter a task!', 'warning');
         return;
     }
     
@@ -54,15 +62,19 @@ function addTask() {
     tasks.push(task);
     taskInput.value = '';
     saveTasks();
-    renderTasks();
+    renderTasks(); 
     updateStats();
 }
 
 function deleteTask(id) {
-    tasks = tasks.filter(task => task.id !== id);
-    saveTasks();
-    renderTasks();
-    updateStats();
+    // now use a confirmation dialog using a custom message box
+    showConfirmBox('Are you sure you want to delete this task?', () => {
+        tasks = tasks.filter(task => task.id !== id);
+        saveTasks();
+        renderTasks(); 
+        updateStats();
+        showMessageBox('Task deleted successfully!', 'success');
+    });
 }
 
 function toggleTask(id) {
@@ -73,13 +85,13 @@ function toggleTask(id) {
         return task;
     });
     saveTasks();
-    renderTasks();
+    renderTasks(); 
     updateStats();
 }
 
 function editTask(id) {
     editingTaskId = id;
-    renderTasks();
+    renderTasks(); 
 }
 
 function saveTask(id) {
@@ -87,7 +99,8 @@ function saveTask(id) {
     const newText = input.value.trim();
     
     if (newText === '') {
-        alert('Task cannot be empty!');
+        // custom message box instead of alert
+        showMessageBox('Task cannot be empty!', 'warning');
         return;
     }
     
@@ -100,28 +113,44 @@ function saveTask(id) {
     
     editingTaskId = null;
     saveTasks();
-    renderTasks();
+    renderTasks(); 
     updateStats();
 }
 
 function cancelEdit() {
     editingTaskId = null;
-    renderTasks();
+    renderTasks(); 
 }
+
 
 function renderTasks() {
     const taskList = document.getElementById('taskList');
     taskList.innerHTML = '';
+    // display based on filter
+    let tasksToDisplay = [];
+    if (currentFilter === 'active') {
+        tasksToDisplay = tasks.filter(task => !task.completed);
+    } else if (currentFilter === 'completed') {
+        tasksToDisplay = tasks.filter(task => task.completed);
+    } else { // 'all'
+        tasksToDisplay = tasks;
+    }
+
+    // update active state of filter buttons
+    document.querySelectorAll('.filter-btn').forEach(button => {
+        button.classList.remove('active');
+    });
+    document.getElementById(`filter${currentFilter.charAt(0).toUpperCase() + currentFilter.slice(1)}Btn`).classList.add('active');
     
-    if (tasks.length === 0) {
+    if (tasksToDisplay.length === 0) {
         const emptyState = document.createElement('div');
         emptyState.className = 'empty-state';
-        emptyState.textContent = 'No tasks yet. Add one above!';
+        emptyState.textContent = `No ${currentFilter === 'all' ? '' : currentFilter} tasks yet.`;
         taskList.appendChild(emptyState);
         return;
     }
     
-    tasks.forEach(task => {
+    tasksToDisplay.forEach(task => { // changed to filtere tasks and not just tasks
         const li = document.createElement('li');
         li.className = 'task-item';
         if (task.completed) {
@@ -138,7 +167,6 @@ function renderTasks() {
                 </div>
             `;
             
-
             setTimeout(() => {
                 const input = document.getElementById(`edit-input-${task.id}`);
                 input.focus();
@@ -158,6 +186,59 @@ function renderTasks() {
         taskList.appendChild(li);
     });
 }
+
+// set the current filter and re-render tasks
+function setFilter(filterType) {
+    currentFilter = filterType;
+    saveTasks(); 
+    renderTasks();
+}
+
+// custom message box functions (replacing alert/confirm)
+function showMessageBox(message, type = 'info') {
+    const messageBox = document.createElement('div');
+    messageBox.className = `message-box ${type}`;
+    messageBox.innerHTML = `
+        <p>${message}</p>
+        <button onclick="this.parentNode.remove()">OK</button>
+    `;
+    document.body.appendChild(messageBox);
+    // auto-remove after a few seconds for info/success messages
+    if (type !== 'warning' && type !== 'error') {
+        setTimeout(() => {
+            if (messageBox.parentNode) {
+                messageBox.parentNode.removeChild(messageBox);
+            }
+        }, 3000);
+    }
+}
+
+function showConfirmBox(message, onConfirm) {
+    const confirmBox = document.createElement('div');
+    confirmBox.className = 'confirm-box';
+    confirmBox.innerHTML = `
+        <p>${message}</p>
+        <div class="confirm-buttons">
+            <button class="confirm-yes" onclick="handleConfirm(true, '${onConfirm.name}')">Yes</button>
+            <button class="confirm-no" onclick="handleConfirm(false)">No</button>
+        </div>
+    `;
+    document.body.appendChild(confirmBox);
+
+    window._confirmCallback = onConfirm;
+}
+
+function handleConfirm(confirmed, callbackName) {
+    const confirmBox = document.querySelector('.confirm-box');
+    if (confirmBox) {
+        confirmBox.remove();
+    }
+    if (confirmed && window._confirmCallback) {
+        window._confirmCallback();
+    }
+    window._confirmCallback = null; 
+}
+
 
 document.getElementById('addBtn').addEventListener('click', addTask);
 
@@ -179,6 +260,6 @@ document.addEventListener('keypress', function(e) {
 
 
 loadTasks();
-
-renderTasks();
+renderTasks(); 
 updateStats();
+
