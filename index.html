@@ -31,11 +31,15 @@
                 <span class="stat-label">Completion Rate</span>
             </div>
         </div>
-        
+        <!-- add filtering buttons and what needs to be done on click. -->
+        <div class="filter-container">
+            <button id="filterAllBtn" class="filter-btn active" onclick="setFilter('all')">All</button>
+            <button id="filterActiveBtn" class="filter-btn" onclick="setFilter('active')">Active</button>
+            <button id="filterCompletedBtn" class="filter-btn" onclick="setFilter('completed')">Completed</button>
+        </div>
         <ul id="taskList"></ul>
     </div>
 
     <script src="main.js"></script>
 </body>
 </html>
-
