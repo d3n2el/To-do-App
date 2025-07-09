@@ -207,6 +207,59 @@
             transform: scale(1.2);
         }
         
+        .stats-container {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 10px;
+            border: 1px solid #dee2e6;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .stat-item {
+            flex: 1;
+            text-align: center;
+            padding: 10px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: transform 0.2s ease;
+        }
+        
+        .stat-item:hover {
+            transform: translateY(-2px);
+        }
+        
+        .stat-number {
+            display: block;
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: #6c757d;
+            text-transform: uppercase;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+        }
+        
+        .stat-item:nth-child(2) .stat-number {
+            color: #28a745;
+        }
+        
+        .stat-item:nth-child(3) .stat-number {
+            color: #ffc107;
+        }
+        
+        .stat-item:nth-child(4) .stat-number {
+            color: #17a2b8;
+        }
+        
         .empty-state {
             text-align: center;
             padding: 40px;
@@ -218,6 +271,15 @@
             .container {
                 padding: 20px;
                 margin: 10px;
+            }
+            
+            .stats-container {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .stat-item {
+                padding: 15px;
             }
             
             .task-item {

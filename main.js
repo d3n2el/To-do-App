@@ -1,6 +1,18 @@
         let tasks = [];
         let editingTaskId = null;
         
+        function updateStats() {
+            const totalTasks = tasks.length;
+            const completedTasks = tasks.filter(task => task.completed).length;
+            const remainingTasks = totalTasks - completedTasks;
+            const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+            
+            document.getElementById('totalTasks').textContent = totalTasks;
+            document.getElementById('completedTasks').textContent = completedTasks;
+            document.getElementById('remainingTasks').textContent = remainingTasks;
+            document.getElementById('completionRate').textContent = completionRate + '%';
+        }
+        
         function addTask() {
             const taskInput = document.getElementById('taskInput');
             const taskText = taskInput.value.trim();
@@ -19,11 +31,13 @@
             tasks.push(task);
             taskInput.value = '';
             renderTasks();
+            updateStats();
         }
         
         function deleteTask(id) {
             tasks = tasks.filter(task => task.id !== id);
             renderTasks();
+            updateStats();
         }
         
         function toggleTask(id) {
@@ -34,6 +48,7 @@
                 return task;
             });
             renderTasks();
+            updateStats();
         }
         
         function editTask(id) {
@@ -59,6 +74,7 @@
             
             editingTaskId = null;
             renderTasks();
+            updateStats();
         }
         
         function cancelEdit() {
@@ -116,7 +132,7 @@
             });
         }
         
-
+   
         document.getElementById('addBtn').addEventListener('click', addTask);
         
         document.getElementById('taskInput').addEventListener('keypress', function(e) {
@@ -135,5 +151,9 @@
             }
         });
         
-        
+    
         renderTasks();
+        updateStats();
+
+
+
