@@ -1,13 +1,15 @@
 let tasks = [];
 let editingTaskId = null;
 let currentFilter = 'all'; 
-
+let currentSort = 'default';
 // to save things locally use json
 function saveTasks() {
     try {
         localStorage.setItem('todoTasks', JSON.stringify(tasks));
         // save filter to local storage too
         localStorage.setItem('todoFilter', currentFilter);
+        // save sorts
+        localStorage.setItem('todoSort', currentSort);
     } catch (error) {
         console.error('Error saving tasks to localStorage:', error);
         showMessageBox('Failed to save tasks. Your browser might have storage limits.', 'error');
@@ -19,11 +21,19 @@ function loadTasks() {
         const savedTasks = localStorage.getItem('todoTasks');
         if (savedTasks) {
             tasks = JSON.parse(savedTasks);
+            tasks = tasks.map(task => ({
+                ...task,
+                priority: task.priority || 'medium'
+            }))
         }
         // use saved filter default to 'all' if not found
         const savedFilter = localStorage.getItem('todoFilter');
         if (savedFilter) {
             currentFilter = savedFilter;
+        }
+        const savedSort = localStorage.getItem('todoSort');
+        if (savedSort) {
+            currentSort = savedSort;
         }
     } catch (error) {
         console.error('Error loading tasks from localStorage:', error);
@@ -47,6 +57,8 @@ function updateStats() {
 function addTask() {
     const taskInput = document.getElementById('taskInput');
     const taskText = taskInput.value.trim();
+    const priorityInput = document.getElementById('priorityInput');
+    const taskPriority = priorityInput.value;
     
     if (taskText === '') {
         showMessageBox('Please enter a task!', 'warning');
@@ -56,13 +68,15 @@ function addTask() {
     const task = {
         id: Date.now(),
         text: taskText,
-        completed: false
+        completed: false,
+        priority: taskPriority,
     };
     
     tasks.push(task);
     taskInput.value = '';
-    saveTasks();
-    renderTasks(); 
+    priorityInput.value = 'medium';
+    saveTasks(); 
+    sortTasksByPriority(currentSort);
     updateStats();
 }
 
@@ -85,7 +99,7 @@ function toggleTask(id) {
         return task;
     });
     saveTasks();
-    renderTasks(); 
+    sortTasksByPriority(currentSort);
     updateStats();
 }
 
@@ -97,6 +111,8 @@ function editTask(id) {
 function saveTask(id) {
     const input = document.querySelector(`#edit-input-${id}`);
     const newText = input.value.trim();
+    const priorityEditSelect = document.querySelector(`#priority-edit-select-${id}`)
+    const newPriority = priorityEditSelect ? priorityEditSelect.value : 'medium';
     
     if (newText === '') {
         // custom message box instead of alert
@@ -107,13 +123,14 @@ function saveTask(id) {
     tasks = tasks.map(task => {
         if (task.id === id) {
             task.text = newText;
+            task.priority = newPriority;
         }
         return task;
     });
     
     editingTaskId = null;
     saveTasks();
-    renderTasks(); 
+    sortTasksByPriority(); 
     updateStats();
 }
 
@@ -126,22 +143,27 @@ function cancelEdit() {
 function renderTasks() {
     const taskList = document.getElementById('taskList');
     taskList.innerHTML = '';
-    // display based on filter
+
+    // set value sort dropdown to currentSort
+    const sortSelect = document.getElementById('sortPriority');
+    if (sortSelect) {
+        sortSelect.value = currentSort;
+    }
+
     let tasksToDisplay = [];
     if (currentFilter === 'active') {
         tasksToDisplay = tasks.filter(task => !task.completed);
     } else if (currentFilter === 'completed') {
         tasksToDisplay = tasks.filter(task => task.completed);
-    } else { // 'all'
+    } else { // all
         tasksToDisplay = tasks;
     }
 
-    // update active state of filter buttons
     document.querySelectorAll('.filter-btn').forEach(button => {
         button.classList.remove('active');
     });
     document.getElementById(`filter${currentFilter.charAt(0).toUpperCase() + currentFilter.slice(1)}Btn`).classList.add('active');
-    
+
     if (tasksToDisplay.length === 0) {
         const emptyState = document.createElement('div');
         emptyState.className = 'empty-state';
@@ -149,24 +171,32 @@ function renderTasks() {
         taskList.appendChild(emptyState);
         return;
     }
-    
-    tasksToDisplay.forEach(task => { // changed to filtere tasks and not just tasks
+
+    tasksToDisplay.forEach(task => {
         const li = document.createElement('li');
         li.className = 'task-item';
         if (task.completed) {
             li.classList.add('completed');
         }
-        
+        // make sure that it renders priorities cuz otherwise all the rest of the code useless
+        li.classList.add(`priority-${task.priority}`);
+
         if (editingTaskId === task.id) {
             li.innerHTML = `
                 <input type="checkbox" class="checkbox" ${task.completed ? 'checked' : ''} onchange="toggleTask(${task.id})">
                 <input type="text" class="task-input" id="edit-input-${task.id}" value="${task.text}">
+                <!-- ADDED: Priority selection dropdown for editing -->
+                <select id="priority-edit-select-${task.id}" class="priority-select">
+                    <option value="low" ${task.priority === 'low' ? 'selected' : ''}>Low</option>
+                    <option value="medium" ${task.priority === 'medium' ? 'selected' : ''}>Medium</option>
+                    <option value="high" ${task.priority === 'high' ? 'selected' : ''}>High</option>
+                </select>
                 <div class="button-group">
                     <button class="save-btn" onclick="saveTask(${task.id})">Save</button>
                     <button class="cancel-btn" onclick="cancelEdit()">Cancel</button>
                 </div>
             `;
-            
+
             setTimeout(() => {
                 const input = document.getElementById(`edit-input-${task.id}`);
                 input.focus();
@@ -176,13 +206,15 @@ function renderTasks() {
             li.innerHTML = `
                 <input type="checkbox" class="checkbox" ${task.completed ? 'checked' : ''} onchange="toggleTask(${task.id})">
                 <span class="task-text">${task.text}</span>
+                <!-- ADDED: Display priority label -->
+                <span class="priority-label priority-${task.priority}">${task.priority.toUpperCase()}</span>
                 <div class="button-group">
                     <button class="edit-btn" onclick="editTask(${task.id})">Edit</button>
                     <button class="delete-btn" onclick="deleteTask(${task.id})">Delete</button>
                 </div>
             `;
         }
-        
+
         taskList.appendChild(li);
     });
 }
@@ -239,7 +271,31 @@ function handleConfirm(confirmed, callbackName) {
     window._confirmCallback = null; 
 }
 
+function sortTasksByPriority(sortOrder) {
+    currentSort = sortOrder; // upd srt ordr
+    saveTasks(); // save everything
 
+    const priorityOrder = { 'high': 3, 'medium': 2, 'low': 1 };
+
+    tasks.sort((a, b) => {
+        // move completed tasks to bottom, looks better ngl
+        if (a.completed && !b.completed) return 1;
+        if (!a.completed && b.completed) return -1;
+
+        // both non-/completed sort by priority
+        const priorityA = priorityOrder[a.priority] || 0; // 0 if undefined
+        const priorityB = priorityOrder[b.priority] || 0;
+
+        if (sortOrder === 'high-to-low') {
+            return priorityB - priorityA; // hg /  lw
+        } else if (sortOrder === 'low-to-high') {
+            return priorityA - priorityB; // lw / hg
+        }
+        return a.id - b.id; // srt by creation order
+    });
+
+    renderTasks(); 
+}
 document.getElementById('addBtn').addEventListener('click', addTask);
 
 document.getElementById('taskInput').addEventListener('keypress', function(e) {
@@ -260,6 +316,7 @@ document.addEventListener('keypress', function(e) {
 
 
 loadTasks();
-renderTasks(); 
+sortTasksByPriority(currentSort);
 updateStats();
 
+                                                         

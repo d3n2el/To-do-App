@@ -37,9 +37,24 @@
             <button id="filterActiveBtn" class="filter-btn" onclick="setFilter('active')">Active</button>
             <button id="filterCompletedBtn" class="filter-btn" onclick="setFilter('completed')">Completed</button>
         </div>
+        <select id="priorityInput" class="priority-select">
+            <option value="low">Low</option>
+            <option value="medium" selected>Medium</option>
+            <option value="high">High</option>
+        </select>
+        <div class="sort-container">
+            <label for="sortPriority">Sort by:</label>
+            <select id="sortPriority" class="sort-select" onchange="sortTasksByPriority(this.value)">
+                <option value="default">Default</option>
+                <option value="high-to-low">Priority (High to Low)</option>
+                <option value="low-to-high">Priority (Low to High)</option>
+            </select>
+        </div>
         <ul id="taskList"></ul>
     </div>
 
     <script src="main.js"></script>
 </body>
 </html>
+
+
