@@ -9,7 +9,14 @@
         <h1>My Todo List</h1>
         
         <div class="input-container">
-            <input type="text" id="taskInput" placeholder="Enter a task...">
+            <input type="text" id="taskInput" placeholder="Enter a task or a question for Gemini...">
+            
+            <select id="priorityInput" class="priority-select">
+                <option value="low">Low</option>
+                <option value="medium" selected>Medium</option>
+                <option value="high">High</option>
+            </select>
+            
             <button id="addBtn">Add Task</button>
         </div>
         
@@ -37,11 +44,7 @@
             <button id="filterActiveBtn" class="filter-btn" onclick="setFilter('active')">Active</button>
             <button id="filterCompletedBtn" class="filter-btn" onclick="setFilter('completed')">Completed</button>
         </div>
-        <select id="priorityInput" class="priority-select">
-            <option value="low">Low</option>
-            <option value="medium" selected>Medium</option>
-            <option value="high">High</option>
-        </select>
+
         <div class="sort-container">
             <label for="sortPriority">Sort by:</label>
             <select id="sortPriority" class="sort-select" onchange="sortTasksByPriority(this.value)">
@@ -49,6 +52,10 @@
                 <option value="high-to-low">Priority (High to Low)</option>
                 <option value="low-to-high">Priority (Low to High)</option>
             </select>
+        </div>
+        <div class="gemini-container">
+            <button id="geminiBtn">Ask Gemini</button>
+            <div id="geminiResponse" class="gemini-response"></div>
         </div>
         <ul id="taskList"></ul>
     </div>

@@ -75,6 +75,9 @@ function addTask() {
     tasks.push(task);
     taskInput.value = '';
     priorityInput.value = 'medium';
+    const geminiResponseContainer = document.getElementById('geminiResponse');
+    geminiResponseContainer.style.display = 'none';
+    geminiResponseContainer.textContent = '';
     saveTasks(); 
     sortTasksByPriority(currentSort);
     updateStats();
@@ -296,7 +299,11 @@ function sortTasksByPriority(sortOrder) {
 
     renderTasks(); 
 }
-document.getElementById('addBtn').addEventListener('click', addTask);
+// make sure btn loaded
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('addBtn').addEventListener('click', addTask);
+});
+
 
 document.getElementById('taskInput').addEventListener('keypress', function(e) {
     if (e.key === 'Enter') {
@@ -314,9 +321,61 @@ document.addEventListener('keypress', function(e) {
     }
 });
 
-
 loadTasks();
 sortTasksByPriority(currentSort);
 updateStats();
 
-                                                         
+async function askGemini() {
+    const promptInput = document.getElementById('taskInput');
+    const prompt = promptInput.value.trim();
+    const geminiResponseContainer = document.getElementById('geminiResponse');
+
+    if (prompt === '') {
+        showMessageBox('Please enter a question for Gemini.', 'warning');
+        return;
+    }
+
+    // 1. show loading
+    geminiResponseContainer.style.display = 'block';
+    geminiResponseContainer.classList.add('loading');
+    geminiResponseContainer.textContent = 'Thinking...';
+
+    try {
+        // data for api
+        const payload = { contents: [{ role: "user", parts: [{ text: prompt }] }] };
+        const apiKey = ""; // none since free version
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+        // 3. use api to fetch answer
+        const response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+            throw new Error(`API request failed with status ${response.status}`);
+        }
+
+        const result = await response.json();
+        
+        // rm loading state
+        geminiResponseContainer.classList.remove('loading');
+
+        //extract and display the text from the response
+        if (result.candidates && result.candidates[0]?.content?.parts[0]) {
+            geminiResponseContainer.textContent = result.candidates[0].content.parts[0].text;
+        } else {
+            geminiResponseContainer.textContent = 'Sorry, the response was empty or in an unexpected format.';
+            console.error("Unexpected API response structure:", result);
+        }
+
+    } catch (error) {
+        // handles errors during api calls
+        console.error('Error calling Gemini API:', error);
+        geminiResponseContainer.classList.remove('loading');
+        geminiResponseContainer.textContent = `An error occurred: ${error.message}.`;
+    }
+}
+
+

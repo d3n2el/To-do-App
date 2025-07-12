@@ -490,3 +490,53 @@ h1 {
     background-color: #17a2b8;
     color: white;
 }
+
+.gemini-container {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-bottom: 30px;
+}
+
+#geminiBtn {
+    padding: 12px 25px;
+    background: linear-gradient(45deg, #11998e, #38ef7d);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(56, 239, 125, 0.3);
+    align-self: center;
+}
+
+#geminiBtn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(56, 239, 125, 0.4);
+}
+
+.gemini-response {
+    background-color: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 20px;
+    min-height: 50px;
+    color: #343a40;
+    line-height: 1.6;
+    /* hidden except when response */
+    display: none; 
+    /*  so that it mantains gemini writing as it is*/
+    white-space: pre-wrap; 
+    animation: fadeIn 0.5s;
+}
+
+/* js to show load */
+.gemini-response.loading {
+    display: block;
+    text-align: center;
+    color: #6c757d;
+    font-style: italic;
+}
+
