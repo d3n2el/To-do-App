@@ -54,30 +54,37 @@ function updateStats() {
     document.getElementById('completionRate').textContent = completionRate + '%';
 }
 
-function addTask() {
+function addTask(taskText = null, taskPriority = null) {
     const taskInput = document.getElementById('taskInput');
-    const taskText = taskInput.value.trim();
     const priorityInput = document.getElementById('priorityInput');
-    const taskPriority = priorityInput.value;
     
-    if (taskText === '') {
+    // Use parameters if provided, otherwise get from inputs
+    const text = taskText || taskInput.value.trim();
+    const priority = taskPriority || priorityInput.value;
+    
+    if (text === '') {
         showMessageBox('Please enter a task!', 'warning');
         return;
     }
     
     const task = {
         id: Date.now(),
-        text: taskText,
+        text: text,
         completed: false,
-        priority: taskPriority,
+        priority: priority,
     };
     
     tasks.push(task);
-    taskInput.value = '';
-    priorityInput.value = 'medium';
-    const geminiResponseContainer = document.getElementById('geminiResponse');
-    geminiResponseContainer.style.display = 'none';
-    geminiResponseContainer.textContent = '';
+    
+    // Only clear inputs if we're using the manual input (not from Gemini)
+    if (!taskText) {
+        taskInput.value = '';
+        priorityInput.value = 'medium';
+        const geminiResponseContainer = document.getElementById('geminiResponse');
+        geminiResponseContainer.style.display = 'none';
+        geminiResponseContainer.textContent = '';
+    }
+    
     saveTasks(); 
     sortTasksByPriority(currentSort);
     updateStats();
@@ -299,54 +306,45 @@ function sortTasksByPriority(sortOrder) {
 
     renderTasks(); 
 }
-// make sure btn loaded
-document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('addBtn').addEventListener('click', addTask);
-});
-
-
-document.getElementById('taskInput').addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') {
-        addTask();
-    }
-});
-
-
-document.addEventListener('keypress', function(e) {
-    if (e.key === 'Enter' && editingTaskId !== null) {
-        saveTask(editingTaskId);
-    }
-    if (e.key === 'Escape' && editingTaskId !== null) {
-        cancelEdit();
-    }
-});
-
-loadTasks();
-sortTasksByPriority(currentSort);
-updateStats();
 
 async function askGemini() {
     const promptInput = document.getElementById('taskInput');
-    const prompt = promptInput.value.trim();
+    const prompt = `Based on the following request, generate a list of tasks. Your response MUST be a valid JSON array of objects. Each object must have a 'taskName' (string) and a 'priority' (string, either 'high', 'medium', or 'low'). Request: "${promptInput.value.trim()}"`;
     const geminiResponseContainer = document.getElementById('geminiResponse');
 
-    if (prompt === '') {
-        showMessageBox('Please enter a question for Gemini.', 'warning');
+    if (promptInput.value.trim() === '') {
+        showMessageBox('Please enter a goal for Gemini to plan.', 'warning');
         return;
     }
 
-    // 1. show loading
     geminiResponseContainer.style.display = 'block';
     geminiResponseContainer.classList.add('loading');
     geminiResponseContainer.textContent = 'Thinking...';
 
     try {
-        // data for api
-        const payload = { contents: [{ role: "user", parts: [{ text: prompt }] }] };
-        const apiKey = ""; // none since free version
+        // Define the structure we expect from the API
+        const schema = {
+            type: "ARRAY",
+            items: {
+                type: "OBJECT",
+                properties: {
+                    "taskName": { "type": "STRING" },
+                    "priority": { "type": "STRING", "enum": ["high", "medium", "low"] }
+                },
+                required: ["taskName", "priority"]
+            }
+        };
+
+        const payload = {
+            contents: [{ role: "user", parts: [{ text: prompt }] }],
+            generationConfig: {
+                responseMimeType: "application/json",
+                responseSchema: schema,
+            }
+        };
+        const apiKey = "AIzaSyAGDFwaan802Vh9f4tW5Ukw2d-smp7m7uM";
         const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
 
-        // 3. use api to fetch answer
         const response = await fetch(apiUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -359,23 +357,48 @@ async function askGemini() {
 
         const result = await response.json();
         
-        // rm loading state
         geminiResponseContainer.classList.remove('loading');
 
-        //extract and display the text from the response
         if (result.candidates && result.candidates[0]?.content?.parts[0]) {
-            geminiResponseContainer.textContent = result.candidates[0].content.parts[0].text;
+            const jsonText = result.candidates[0].content.parts[0].text;
+            const generatedTasks = JSON.parse(jsonText);
+            addTasksFromGemini(generatedTasks);
+            geminiResponseContainer.style.display = 'none';
+            promptInput.value = '';
         } else {
             geminiResponseContainer.textContent = 'Sorry, the response was empty or in an unexpected format.';
             console.error("Unexpected API response structure:", result);
         }
-
-    } catch (error) {
-        // handles errors during api calls
+ 
+     } catch (error) {
         console.error('Error calling Gemini API:', error);
         geminiResponseContainer.classList.remove('loading');
-        geminiResponseContainer.textContent = `An error occurred: ${error.message}.`;
+        geminiResponseContainer.textContent = `An error occurred: ${error.message}. Please try a different prompt.`;
     }
 }
 
+function addTasksFromGemini(newTasks) {
+    if (!Array.isArray(newTasks) || newTasks.length === 0) {
+        showMessageBox("Gemini didn't return any tasks. Please try a different prompt.", "warning");
+        return;
+    }
+    newTasks.forEach(task => {
+        // chjeck task object is valid before adding
+        if(task.taskName && task.priority) {
+            addTask(task.taskName, task.priority);
+        }
+    });
+    showMessageBox(`${newTasks.length} tasks were added by the AI!`, 'success');
+    saveTasks();
+    renderTasks();
+}
 
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('addBtn').addEventListener('click', addTask);
+    document.getElementById('geminiBtn').addEventListener('click', askGemini);
+    document.getElementById('taskInput').addEventListener('keypress', e => { if (e.key === 'Enter') addTask(); });
+    document.addEventListener('keydown', e => { if (editingTaskId !== null) { if (e.key === 'Enter') saveTask(editingTaskId); if (e.key === 'Escape') cancelEdit(); } });
+    loadTasks();
+    saveTasks();
+    renderTasks();
+});

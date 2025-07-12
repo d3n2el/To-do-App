@@ -9,7 +9,7 @@
         <h1>My Todo List</h1>
         
         <div class="input-container">
-            <input type="text" id="taskInput" placeholder="Enter a task or a question for Gemini...">
+            <input type="text" id="taskInput" placeholder="Enter a task or ask gemini to plan something...">
             
             <select id="priorityInput" class="priority-select">
                 <option value="low">Low</option>
@@ -19,7 +19,10 @@
             
             <button id="addBtn">Add Task</button>
         </div>
-        
+        <div class="gemini-container">
+            <button id="geminiBtn">Ask Gemini</button>
+            <div id="geminiResponse" class="gemini-response"></div>
+        </div>
         <div class="stats-container">
             <div class="stat-item">
                 <span class="stat-number" id="totalTasks">0</span>
@@ -53,10 +56,7 @@
                 <option value="low-to-high">Priority (Low to High)</option>
             </select>
         </div>
-        <div class="gemini-container">
-            <button id="geminiBtn">Ask Gemini</button>
-            <div id="geminiResponse" class="gemini-response"></div>
-        </div>
+
         <ul id="taskList"></ul>
     </div>
 
