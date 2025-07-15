@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Todo App</title>
+    <link rel="stylesheet" href="stylesheet.css">
+</head>
+<body>
+    <div class="container">
+        <h1>My Todo List</h1>
+        
+        <div class="input-container">
+            <input type="text" id="taskInput" placeholder="Enter a task or ask gemini to plan something...">
+            
+            <select id="priorityInput" class="priority-select">
+                <option value="low">Low</option>
+                <option value="medium" selected>Medium</option>
+                <option value="high">High</option>
+            </select>
+            
+            <button id="addBtn">Add Task</button>
+        </div>
+        <div class="gemini-container">
+            <button id="geminiBtn">Ask Gemini</button>
+            <div id="geminiResponse" class="gemini-response"></div>
+        </div>
+        <div class="stats-container">
+            <div class="stat-item">
+                <span class="stat-number" id="totalTasks">0</span>
+                <span class="stat-label">Total Tasks</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number" id="completedTasks">0</span>
+                <span class="stat-label">Completed</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number" id="remainingTasks">0</span>
+                <span class="stat-label">Remaining</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number" id="completionRate">0%</span>
+                <span class="stat-label">Completion Rate</span>
+            </div>
+        </div>
+        <!-- add filtering buttons and what needs to be done on click. -->
+        <div class="filter-container">
+            <button id="filterAllBtn" class="filter-btn active" onclick="setFilter('all')">All</button>
+            <button id="filterActiveBtn" class="filter-btn" onclick="setFilter('active')">Active</button>
+            <button id="filterCompletedBtn" class="filter-btn" onclick="setFilter('completed')">Completed</button>
+        </div>
+
+        <div class="sort-container">
+            <label for="sortPriority">Sort by:</label>
+            <select id="sortPriority" class="sort-select" onchange="sortTasksByPriority(this.value)">
+                <option value="default">Default</option>
+                <option value="high-to-low">Priority (High to Low)</option>
+                <option value="low-to-high">Priority (Low to High)</option>
+            </select>
+        </div>
+
+        <ul id="taskList"></ul>
+        <button id="clearCompletedBtn" class="filter-btn danger">Clear Completed</button>
+    </div>
+
+    <script src="main.js"></script>
+</body>
+</html>
+
