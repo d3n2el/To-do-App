@@ -29,6 +29,7 @@ function isOverdue(dateString) {
 function isDueSoon(dateString){
     if(!dateString || isToday(dateString) || isOverdue(dateString)) return false;
     const today = new Date();
+    const date = new Date(dateString); // this missing was the real problem
     today.setHours(0,0,0,0)
     const sevenDaysFromNow = new Date();
     sevenDaysFromNow.setDate(today.getDate()+ 7);
@@ -93,7 +94,7 @@ function updateStats() {
     }
 }
 
-function addTask(taskText = null, taskPriority = null) {
+function addTask(taskText = null, taskPriority = null, taskDueDate = null) {
     const taskInput = document.getElementById('taskInput');
     const priorityInput = document.getElementById('priorityInput');
     const dueDateInput = document.getElementById('dueDateInput')
@@ -168,7 +169,7 @@ function saveTask(id) {
     const newText = input.value.trim();
     const priorityEditSelect = document.querySelector(`#priority-edit-select-${id}`)
     const newPriority = priorityEditSelect ? priorityEditSelect.value : 'medium';
-    const dueDateEditInput = documen.querySelector(`#dueDate-edit-input-${id}`)
+    const dueDateEditInput = document.querySelector(`#dueDate-edit-input-${id}`) //found the typo, still hate js though
     const newDueDate = dueDateEditInput ? dueDateEditInput.value : null;
 
     if (newText === '') {
@@ -363,6 +364,12 @@ function sortTasksByPriority(sortOrder) {
             if(!a.dueDate && !b.dueDate) return 0;
             if(!a.dueDate) return 1;
             if(!b.dueDate) return -1;
+            return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+        }else if( sortOrder === 'due-date-desc') {
+            if(!a.dueDate && !b.dueDate) return 0;
+            if(!a.dueDate) return 1;
+            if(!b.dueDate) return -1;
+            // latest first
             return new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime();
         }
         // treat ids as strings for comparison when sorting
@@ -495,5 +502,5 @@ document.addEventListener('DOMContentLoaded', () => {
     updateStats();
 });
 
-// i hate js and my life. why tf does this not work??????
+
 

@@ -560,30 +560,33 @@ h1 {
 
 .due-date-display {
     font-size: 0.85rem;
-    color: #6c757d;
-    background-color: #e9ecef;
     padding: 3px 8px;
     border-radius: 5px;
     margin-left: 10px;
     white-space: nowrap; /* dont let date wrap*/
+    transition: all 0.3s ease;
 }
 
-.task-item.overdue {
-    border-left: 5px solid #dc3545;
-    background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+.task-item.overdue .due-date-display {
+    color: #fff;
+    background-color: #dc3545;
+    box-shadow: 0 2px 4px rgba(220, 53, 69, 0.2);
 }
 
-.task-item.due-today {
-    border-left: 5px solid #ffc107;
-    background: linear-gradient(135deg, #fff3cd 0%, #ffeeba 100%);
-}
-.task-item.due-soon {
-    border-left: 5px solid #17a2b8;
-    background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);
+.task-item.due-today .due-date-display {
+    color: #000;
+    background-color: #ffc107;
+    box-shadow: 0 2px 4px rgba(255, 193, 7, 0.2);
 }
 
-.task-item.overdue,
-.task-item.due-today,
-.task-item.due-soon {
-    border-left-width: 5px; /* make sure its visible*/
+.task-item.due-soon .due-date-display {
+    color: #fff;
+    background-color: #17a2b8;
+    box-shadow: 0 2px 4px rgba(23, 162, 184, 0.2);
+}
+
+/* default state */
+.task-item:not(.overdue):not(.due-today):not(.due-soon) .due-date-display {
+    color: #6c757d;
+    background-color: #e9ecef;
 }
