@@ -462,7 +462,7 @@ h1 {
     letter-spacing: 0.5px;
     margin-left: auto;
 }
-.priority-select, .sort-select {
+.priority-select, .sort-select, .date-input {
     padding: 15px;
     border: 2px solid #e0e0e0;
     border-radius: 8px;
@@ -478,7 +478,7 @@ h1 {
     background-size: 12px;
 }
 
-.priority-select:focus, .sort-select:focus {
+.priority-select:focus, .sort-select:focus , .date-input:focus{
     border-color: #667eea;
     box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
@@ -558,3 +558,32 @@ h1 {
     font-style: italic;
 }
 
+.due-date-display {
+    font-size: 0.85rem;
+    color: #6c757d;
+    background-color: #e9ecef;
+    padding: 3px 8px;
+    border-radius: 5px;
+    margin-left: 10px;
+    white-space: nowrap; /* dont let date wrap*/
+}
+
+.task-item.overdue {
+    border-left: 5px solid #dc3545;
+    background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+}
+
+.task-item.due-today {
+    border-left: 5px solid #ffc107;
+    background: linear-gradient(135deg, #fff3cd 0%, #ffeeba 100%);
+}
+.task-item.due-soon {
+    border-left: 5px solid #17a2b8;
+    background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);
+}
+
+.task-item.overdue,
+.task-item.due-today,
+.task-item.due-soon {
+    border-left-width: 5px; /* make sure its visible*/
+}

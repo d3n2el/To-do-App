@@ -3,6 +3,38 @@ let editingTaskId = null;
 let currentFilter = 'all'; 
 let currentSort = 'default';
 // to save things locally use json
+function formatDate(dateString) {
+    if(!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric'});
+}
+// helper func, check if date is today
+function isToday(dateString) {
+    if(!dateString) return false;
+    const today = new Date();
+    const date = new Date(dateString);
+    return date.getDate() === today.getDate() &&
+        date.getMonth() === today.getMonth() &&
+        date.getFullYear() === today.getFullYear();
+}
+// other helper function to check if overdue
+function isOverdue(dateString) {
+    if (!dateString) return false;
+    const today = new Date();
+    today.setHours(0,0,0,0) //start of the day
+    const date = new Date(dateString);
+    date.setHours(0,0,0,0);
+    return date < today;
+}
+function isDueSoon(dateString){
+    if(!dateString || isToday(dateString) || isOverdue(dateString)) return false;
+    const today = new Date();
+    today.setHours(0,0,0,0)
+    const sevenDaysFromNow = new Date();
+    sevenDaysFromNow.setDate(today.getDate()+ 7);
+    sevenDaysFromNow.setHours(0,0,0,0);
+    return date > today && date <= sevenDaysFromNow;
+}
 function saveTasks() {
     try {
         localStorage.setItem('todoTasks', JSON.stringify(tasks));
@@ -25,7 +57,8 @@ function loadTasks() {
             tasks = tasks.map(task => ({
                 ...task,
                 id: task.id || crypto.randomUUID(), 
-                priority: task.priority || 'medium'
+                priority: task.priority || 'medium',
+                dueDate: task.dueDate || null // create dates for older tasks
             }))
         }
         // use saved filter default to 'all' if not found
@@ -63,11 +96,13 @@ function updateStats() {
 function addTask(taskText = null, taskPriority = null) {
     const taskInput = document.getElementById('taskInput');
     const priorityInput = document.getElementById('priorityInput');
-    
+    const dueDateInput = document.getElementById('dueDateInput')
     // Use parameters if provided, otherwise get from inputs
     const text = taskText || taskInput.value.trim();
     const priority = taskPriority || priorityInput.value;
-    
+    // get due date from input
+    const dueDate = taskDueDate || (dueDateInput ? dueDateInput.value: null);
+
     if (text === '') {
         showMessageBox('Please enter a task!', 'warning');
         return;
@@ -78,6 +113,7 @@ function addTask(taskText = null, taskPriority = null) {
         text: text,
         completed: false,
         priority: priority,
+        dueDate: dueDate,
     };
     
     tasks.push(task);
@@ -86,6 +122,9 @@ function addTask(taskText = null, taskPriority = null) {
     if (!taskText) {
         taskInput.value = '';
         priorityInput.value = 'medium';
+        if(dueDateInput){ // clear due date if there is one
+            dueDateInput.value = '';
+        }
         const geminiResponseContainer = document.getElementById('geminiResponse');
         geminiResponseContainer.style.display = 'none';
         geminiResponseContainer.textContent = '';
@@ -129,7 +168,9 @@ function saveTask(id) {
     const newText = input.value.trim();
     const priorityEditSelect = document.querySelector(`#priority-edit-select-${id}`)
     const newPriority = priorityEditSelect ? priorityEditSelect.value : 'medium';
-    
+    const dueDateEditInput = documen.querySelector(`#dueDate-edit-input-${id}`)
+    const newDueDate = dueDateEditInput ? dueDateEditInput.value : null;
+
     if (newText === '') {
         // custom message box instead of alert
         showMessageBox('Task cannot be empty!', 'warning');
@@ -140,13 +181,14 @@ function saveTask(id) {
         if (task.id === id) {
             task.text = newText;
             task.priority = newPriority;
+            task.dueDate = newDueDate;
         }
         return task;
     });
     
     editingTaskId = null;
     saveTasks();
-    sortTasksByPriority(); 
+    sortTasksByPriority(currentSort); //forgot to add this to resort after saving
     updateStats();
 }
 
@@ -196,7 +238,16 @@ function renderTasks() {
         }
         // make sure that it renders priorities cuz otherwise all the rest of the code useless
         li.classList.add(`priority-${task.priority}`);
-
+        // add due date specific classes
+        if(!task.completed) {
+            if(isOverdue(task.dueDate)){
+                li.classList.add('overdue');
+            } else if(isToday(task.dueDate)) {
+                li.classList.add('due-today');
+            } else if(isDueSoon(task.dueDate)) {
+                li.classList.add('due-soon');
+            }
+        }
         if (editingTaskId === task.id) {
             li.innerHTML = `
                 <input type="checkbox" class="checkbox" ${task.completed ? 'checked' : ''} onchange="toggleTask('${task.id}')">
@@ -207,6 +258,7 @@ function renderTasks() {
                     <option value="medium" ${task.priority === 'medium' ? 'selected' : ''}>Medium</option>
                     <option value="high" ${task.priority === 'high' ? 'selected' : ''}>High</option>
                 </select>
+                <input type="date" id="dueDate-edit-input-${task.id}" class="date-input" value="${task.dueDate || ''}" title="Edit Due Date">
                 <div class="button-group">
                     <button class="save-btn" onclick="saveTask('${task.id}')">Save</button> 
                     <button class="cancel-btn" onclick="cancelEdit()">Cancel</button>
@@ -222,6 +274,7 @@ function renderTasks() {
             li.innerHTML = `
                 <input type="checkbox" class="checkbox" ${task.completed ? 'checked' : ''} onchange="toggleTask('${task.id}')">
                 <span class="task-text">${task.text}</span>
+                 ${task.dueDate ? `<span class="due-date-display">${formatDate(task.dueDate)}</span>` : ''}
                 <!-- ADDED: Display priority label -->
                 <span class="priority-label priority-${task.priority}">${task.priority.toUpperCase()}</span>
                 <div class="button-group">
@@ -306,6 +359,11 @@ function sortTasksByPriority(sortOrder) {
             return priorityB - priorityA; // hg /  lw
         } else if (sortOrder === 'low-to-high') {
             return priorityA - priorityB; // lw / hg
+        } else if (sortOrder === 'due-date-asc'){
+            if(!a.dueDate && !b.dueDate) return 0;
+            if(!a.dueDate) return 1;
+            if(!b.dueDate) return -1;
+            return new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime();
         }
         // treat ids as strings for comparison when sorting
         return String(a.id).localeCompare(String(b.id)); 
@@ -316,7 +374,7 @@ function sortTasksByPriority(sortOrder) {
 
 async function askGemini() {
     const promptInput = document.getElementById('taskInput');
-    const prompt = `Based on the following request, generate a list of tasks. Your response MUST be a valid JSON array of objects. Each object must have a 'taskName' (string) and a 'priority' (string, either 'high', 'medium', or 'low'). Request: "${promptInput.value.trim()}"`;
+    const prompt = `Based on the following request, generate a list of tasks. Your response MUST be a valid JSON array of objects. Each object must have a 'taskName' (string) and a 'priority' (string, either 'high', 'medium', or 'low'). Optionally, include a 'dueDate' (string, YYYY-MM-DD format).Request: "${promptInput.value.trim()}"`;
     const geminiResponseContainer = document.getElementById('geminiResponse');
 
     if (promptInput.value.trim() === '') {
@@ -336,7 +394,8 @@ async function askGemini() {
                 type: "OBJECT",
                 properties: {
                     "taskName": { "type": "STRING" },
-                    "priority": { "type": "STRING", "enum": ["high", "medium", "low"] }
+                    "priority": { "type": "STRING", "enum": ["high", "medium", "low"] },
+                    "dueDate": {"type": "STRING", "format": "date"},
                 },
                 required: ["taskName", "priority"]
             }
@@ -392,7 +451,7 @@ function addTasksFromGemini(newTasks) {
     newTasks.forEach(task => {
         // chjeck task object is valid before adding
         if(task.taskName && task.priority) {
-            addTask(task.taskName, task.priority);
+            addTask(task.taskName, task.priority, task.dueDate || null);
         }
     });
     showMessageBox(`${newTasks.length} tasks were added by the AI!`, 'success');
@@ -430,9 +489,11 @@ document.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('keydown', e => { if (editingTaskId !== null) { if (e.key === 'Enter') saveTask(editingTaskId); if (e.key === 'Escape') cancelEdit(); } });
     document.getElementById('clearCompletedBtn').addEventListener('click', clearCompletedTasks);
     loadTasks();
+    sortTasksByPriority(currentSort); //previously forgot
     saveTasks();
     renderTasks();
+    updateStats();
 });
 
-
+// i hate js and my life. why tf does this not work??????
 
