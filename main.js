@@ -412,7 +412,7 @@ async function askGemini() {
             contents: [{ role: "user", parts: [{ text: prompt }] }],
             generationConfig: {
                 responseMimeType: "application/json",
-                responseSchema: schema,
+                //responseSchema: schema,
             }
         };
         const apiKey = "AIzaSyAGDFwaan802Vh9f4tW5Ukw2d-smp7m7uM"; 
