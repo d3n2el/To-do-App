@@ -227,16 +227,17 @@ function renderTasks() {
         tasksToDisplay = tasks.filter(task => task.priority === 'medium')
     } else if(currentFilter === 'low-priority'){
         tasksToDisplay =  tasks.filter(task => task.priority === 'low')
-    }if (currentSearch) {
-        const search = currentSearch.toLowerCase();
-        tasksToDisplay = tasksToDisplay.filter(task =>
-        task.text.toLowerCase().includes(search)
-    );
     }
     else { // all
         tasksToDisplay = tasks;
     }
 
+    if (currentSearch) {
+        const search = currentSearch.toLowerCase();
+        tasksToDisplay = tasksToDisplay.filter(task =>
+        task.text.toLowerCase().includes(search)
+    );
+    }
     document.querySelectorAll('.filter-btn').forEach(button => {
         button.classList.remove('active');
     });
