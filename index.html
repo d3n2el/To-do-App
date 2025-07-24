@@ -6,8 +6,11 @@
 </head>
 <body>
     <div class="container">
-        <h1>My Todo List</h1>
+        <div class="search-container">
+            <input type="text" id="searchInput" placeholder="Search tasks..." class="task-input">
+        </div>
         
+        <h1>My Todo List</h1>
         <div class="input-container">
             <input type="text" id="taskInput" placeholder="Enter a task or ask gemini to plan something...">
             
@@ -47,6 +50,9 @@
             <button id="filterAllBtn" class="filter-btn active" onclick="setFilter('all')">All</button>
             <button id="filterActiveBtn" class="filter-btn" onclick="setFilter('active')">Active</button>
             <button id="filterCompletedBtn" class="filter-btn" onclick="setFilter('completed')">Completed</button>
+            <button id="filterHigh-priorityBtn" class="filter-btn" onclick="setFilter('high-priority')">High Priority</button>
+            <button id="filterMedium-priorityBtn" class="filter-btn" onclick="setFilter('medium-priority')">Medium Priority</button>
+            <button id="filterLow-priorityBtn" class="filter-btn" onclick="setFilter('low-priority')">Low Priority</button>
         </div>
 
         <div class="sort-container">

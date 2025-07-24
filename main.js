@@ -2,6 +2,7 @@ let tasks = [];
 let editingTaskId = null;
 let currentFilter = 'all'; 
 let currentSort = 'default';
+let currentSearch = ''; 
 // to save things locally use json
 function formatDate(dateString) {
     if(!dateString) return '';
@@ -43,6 +44,7 @@ function saveTasks() {
         localStorage.setItem('todoFilter', currentFilter);
         // save sorts
         localStorage.setItem('todoSort', currentSort);
+        localStorage.setItem('todoSearch', currentSearch);
     } catch (error) {
         console.error('Error saving tasks to localStorage:', error);
         showMessageBox('Failed to save tasks. Your browser might have storage limits.', 'error');
@@ -71,6 +73,11 @@ function loadTasks() {
         if (savedSort) {
             currentSort = savedSort;
         }
+        const savedSearch = localStorage.getItem('todoSearch'); 
+        if (savedSearch) {
+            currentSearch = savedSearch;
+            document.getElementById('searchInput').value = currentSearch; 
+}
     } catch (error) {
         console.error('Error loading tasks from localStorage:', error);
         showMessageBox('Failed to load saved tasks. Starting with empty list.', 'error');
@@ -214,7 +221,19 @@ function renderTasks() {
         tasksToDisplay = tasks.filter(task => !task.completed);
     } else if (currentFilter === 'completed') {
         tasksToDisplay = tasks.filter(task => task.completed);
-    } else { // all
+    } else if(currentFilter === 'high-priority'){
+        tasksToDisplay = tasks.filter(task => task.priority === 'high'  )
+    }else if( currentFilter === 'medium-priority'){
+        tasksToDisplay = tasks.filter(task => task.priority === 'medium')
+    } else if(currentFilter === 'low-priority'){
+        tasksToDisplay =  tasks.filter(task => task.priority === 'low')
+    }if (currentSearch) {
+        const search = currentSearch.toLowerCase();
+        tasksToDisplay = tasksToDisplay.filter(task =>
+        task.text.toLowerCase().includes(search)
+    );
+    }
+    else { // all
         tasksToDisplay = tasks;
     }
 
@@ -484,7 +503,12 @@ function clearCompletedTasks() {
         showMessageBox('Cleared all completed tasks.', 'success');
     });
 }
-
+function handleSearch() {
+    const searchInput = document.getElementById('searchInput');
+    currentSearch = searchInput.value.trim(); 
+    saveTasks(); 
+    renderTasks();
+}
 
 
 
@@ -495,6 +519,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('taskInput').addEventListener('keypress', e => { if (e.key === 'Enter') addTask(); });
     document.addEventListener('keydown', e => { if (editingTaskId !== null) { if (e.key === 'Enter') saveTask(editingTaskId); if (e.key === 'Escape') cancelEdit(); } });
     document.getElementById('clearCompletedBtn').addEventListener('click', clearCompletedTasks);
+    document.getElementById('searchInput').addEventListener('input', handleSearch);
     loadTasks();
     sortTasksByPriority(currentSort); //previously forgot
     saveTasks();
